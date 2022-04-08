@@ -1,95 +1,93 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DaysForecast from "./components/DaysForecast";
 import PlaceInfo from "./components/PlaceInfo";
 import WeatherInfo from "./components/WeatherInfo";
 import { format } from "date-fns";
 const axios = require("axios");
-
-const ApiKey = process.env.REACT_APP_GMAP_API_KEY;
-const mapApiJs = "https://maps.googleapis.com/maps/api/js";
-
-let autocomplete: any;
-
-const loadAsyncScript = (src: string) => {
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    Object.assign(script, {
-      type: "text/javascript",
-      async: true,
-      src,
-    });
-    script.addEventListener("load", () => resolve(script));
-    document.head.appendChild(script);
-  });
-};
-
-const initMapScript = () => {
-  if (window.google) {
-    return Promise.resolve();
-  }
-  const src = `${mapApiJs}?key=${ApiKey}&libraries=places`;
-  return loadAsyncScript(src);
-};
-
-const initAutocomplete = (updateCity: any, searchInput: any, setPhoto: any) => {
-  autocomplete = new window.google.maps.places.Autocomplete(
-    searchInput.current,
-    { types: ["(cities)"] }
-  );
-  autocomplete.setFields(["name", "photo"]);
-  autocomplete.addListener("place_changed", () =>
-    handlePlaceSelect(updateCity, setPhoto)
-  );
-};
-
-async function handlePlaceSelect(updateCity: any, setPhoto: any) {
-  const addressObject = autocomplete.getPlace();
-  const city = addressObject.name;
-  // const image = addressObject.photos[0].getUrl({
-  //   maxWidth: 1920,
-  //   maxHeight: 1080,
-  // });
-  const arr: any = [];
-  addressObject.photos.map((url: any) => {
-    const img = url.getUrl({ maxWidth: 1920, maxHeight: 1080 });
-    arr.push({ img });
-  });
-  updateCity(city);
-  setPhoto(arr);
-}
-
 function App() {
   const searchInput = useRef(null);
   const [city, setCity] = useState("");
-  const [mainCity, setMainCity] = useState("");
-  const [photo, setPhoto] = useState([]);
+  const [lng, setLng] = useState(0);
+  const [lat, setLat] = useState(0);
+  const [geoLink, setGeoLink] = useState("");
   const [weatherData, setWeatherData] = useState([]);
   const today = format(new Date(), "E, dd MMM");
+  const ApiKey = process.env.REACT_APP_GMAP_API_KEY;
+  const mapApiJs = "https://maps.googleapis.com/maps/api/js";
+  let autocomplete: any;
 
-  const weatherApi = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${process.env.REACT_APP_OPENWEATHER_API_KEY}`;
-
-  const fetchData = async () => {
-    try {
-      if (!city) return;
-      const response = await axios.get(weatherApi);
-      setWeatherData(response.data);
-      console.log(response.data);
-    } catch (err: any) {
-      if (err.response) {
-        console.log(err.response.data);
-        console.log(err.response.status);
-        console.log(err.response.headers);
-      } else {
-        console.log(`Error: ${err.message}`);
-      }
-    }
+  const loadAsyncScript = (src: string) => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      Object.assign(script, {
+        type: "text/javascript",
+        async: true,
+        src,
+      });
+      script.addEventListener("load", () => resolve(script));
+      document.head.appendChild(script);
+    });
   };
-  useEffect(() => {
-    initMapScript().then(() =>
-      initAutocomplete(setCity, searchInput, setPhoto)
+  const initMapScript = () => {
+    if (window.google) {
+      return Promise.resolve();
+    }
+    const src = `${mapApiJs}?key=${ApiKey}&libraries=places`;
+    return loadAsyncScript(src);
+  };
+
+  const initAutocomplete = (updateCity: any, searchInput: any) => {
+    autocomplete = new window.google.maps.places.Autocomplete(
+      searchInput.current,
+      { types: ["(cities)"] }
     );
-    fetchData();
-  }, [searchInput]);
+    autocomplete.setFields(["place_id"]);
+    autocomplete.addListener("place_changed", () =>
+      handlePlaceSelect(updateCity)
+    );
+  };
+  async function handlePlaceSelect(updateCity: any) {
+    const addressObject = autocomplete.getPlace();
+    const city_id = addressObject.place_id;
+    updateCity(city_id);
+  }
+
+  async function getLonAndLat() {
+    const geoLink = `https://maps.googleapis.com/maps/api/geocode/json?place_id=${city}&key=${process.env.REACT_APP_GMAP_API_KEY}`;
+    setGeoLink(geoLink);
+    const geodata = await axios.get(geoLink);
+    const a = geodata.data.results[0].geometry.location.lat;
+    const b = geodata.data.results[0].geometry.location.lng;
+    setLat(a);
+    setLng(b);
+  }
+
+  async function setWeather() {
+    const weatherApiLink = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lng}&exclude=hourly,minutely&appid=${process.env.REACT_APP_OPENWEATHER_API_KEY}`;
+    const weatherDataResult = await axios.get(weatherApiLink);
+    setWeatherData(weatherDataResult.data);
+    console.log(weatherData);
+  }
+
+  useEffect(() => {
+    initMapScript().then(() => initAutocomplete(setCity, searchInput));
+  }, []);
+
+  useEffect(() => {
+    if (city === "") {
+      return;
+    } else {
+      getLonAndLat();
+    }
+  }, [city]);
+
+  useEffect(() => {
+    if (lng === 0 || lat === 0) {
+      return;
+    } else {
+      setWeather();
+    }
+  }, [geoLink]);
 
   return (
     <div className="bg-main bg-cover bg-no-repeat bg-center h-[100vh] flex">
@@ -106,13 +104,6 @@ function App() {
           ref={searchInput}
         />
         <br />
-        {!city ? null : (
-          <h3 className="text-center font-Poppins">Some photos of {city} </h3>
-        )}
-        <br />
-        {photo.map(({ img }: any) => {
-          <p>{img}</p>;
-        })}
       </div>
     </div>
   );

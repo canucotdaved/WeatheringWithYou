@@ -5,13 +5,12 @@ interface PropType {
   dateTime: any;
   place: string;
 }
-
 const PlaceInfo: React.FC<PropType> = ({ temperature, dateTime, place }) => {
   return (
     <div className="flex flex-row items-center">
-      {temperature?.main?.temp ? (
+      {temperature?.current?.main?.temp ? (
         <h2 className="font-Poppins font-bold text-8xl pr-5">
-          {Math.round(temperature?.main?.temp)}&deg;
+          {Math.round(temperature?.current?.main?.temp)}&deg;
         </h2>
       ) : (
         <h2 className="font-Poppins font-bold text-8xl pr-5">00&deg;</h2>
