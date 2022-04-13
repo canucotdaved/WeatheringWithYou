@@ -9,8 +9,9 @@ function App() {
   const [city, setCity] = useState("");
   const [lng, setLng] = useState(0);
   const [lat, setLat] = useState(0);
-  const [geoLink, setGeoLink] = useState("");
-  const [weatherData, setWeatherData] = useState([]);
+  const [daysforecast, setDaysForecast] = useState<any[]>([]);
+  const [cityName, setCityName] = useState("");
+  const [weatherData, setWeatherData] = useState<any[]>([]);
   const today = format(new Date(), "E, dd MMM");
   const ApiKey = process.env.REACT_APP_GMAP_API_KEY;
   const mapApiJs = "https://maps.googleapis.com/maps/api/js";
@@ -36,65 +37,72 @@ function App() {
     return loadAsyncScript(src);
   };
 
-  const initAutocomplete = (updateCity: any, searchInput: any) => {
+  const initAutocomplete = (
+    updateCity: any,
+    searchInput: any,
+    updateCityName: any
+  ) => {
     autocomplete = new window.google.maps.places.Autocomplete(
       searchInput.current,
       { types: ["(cities)"] }
     );
-    autocomplete.setFields(["place_id"]);
+    autocomplete.setFields(["place_id", "name"]);
     autocomplete.addListener("place_changed", () =>
-      handlePlaceSelect(updateCity)
+      handlePlaceSelect(updateCity, updateCityName)
     );
   };
-  async function handlePlaceSelect(updateCity: any) {
+  async function handlePlaceSelect(updateCity: any, updateCityName: any) {
     const addressObject = autocomplete.getPlace();
     const city_id = addressObject.place_id;
+    const city_name = addressObject.name;
     updateCity(city_id);
-  }
-
-  async function getLonAndLat() {
-    const geoLink = `https://maps.googleapis.com/maps/api/geocode/json?place_id=${city}&key=${process.env.REACT_APP_GMAP_API_KEY}`;
-    setGeoLink(geoLink);
-    const geodata = await axios.get(geoLink);
-    const a = geodata.data.results[0].geometry.location.lat;
-    const b = geodata.data.results[0].geometry.location.lng;
-    setLat(a);
-    setLng(b);
-  }
-
-  async function setWeather() {
-    const weatherApiLink = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lng}&exclude=hourly,minutely&appid=${process.env.REACT_APP_OPENWEATHER_API_KEY}`;
-    const weatherDataResult = await axios.get(weatherApiLink);
-    setWeatherData(weatherDataResult.data);
-    console.log(weatherData);
+    updateCityName(city_name);
   }
 
   useEffect(() => {
-    initMapScript().then(() => initAutocomplete(setCity, searchInput));
-  }, []);
+    initMapScript().then(() =>
+      initAutocomplete(setCity, searchInput, setCityName)
+    );
+  }, [searchInput]);
 
   useEffect(() => {
-    if (city === "") {
-      return;
-    } else {
-      getLonAndLat();
-    }
+    if (!city) return;
+
+    const geolink = `https://maps.googleapis.com/maps/api/geocode/json?place_id=${city}&key=${process.env.REACT_APP_GMAP_API_KEY}`;
+
+    const fetchLatandLon = async () => {
+      await axios.get(geolink).then((res: any) => {
+        setLat(res.data.results[0].geometry.location.lat);
+        setLng(res.data.results[0].geometry.location.lng);
+        console.log(lat, lng, `lat and long`);
+      });
+    };
+    fetchLatandLon();
   }, [city]);
 
   useEffect(() => {
-    if (lng === 0 || lat === 0) {
-      return;
-    } else {
-      setWeather();
-    }
-  }, [geoLink]);
+    if (!city) return;
+    if (lat === 0 || lng === 0) return;
+
+    const weatherApiLink = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lng}&exclude=hourly,minutely&units=metric&appid=${process.env.REACT_APP_OPENWEATHER_API_KEY}`;
+    const fetchWeather = async () => {
+      await axios.get(weatherApiLink).then((res: any) => {
+        setWeatherData(res.data.current);
+        setDaysForecast(res.data.daily);
+      });
+    };
+    fetchWeather();
+  }, [lat, lng]);
 
   return (
     <div className="bg-main bg-cover bg-no-repeat bg-center h-[100vh] flex">
       <div className="p-10 w-full md:w-1/2">
-        <PlaceInfo temperature={weatherData} dateTime={today} place={city} />
-        <DaysForecast />
-        <WeatherInfo />
+        <PlaceInfo
+          temperature={weatherData}
+          dateTime={today}
+          place={cityName}
+          forecast={daysforecast}
+        />
       </div>
       <div className="p-10 w-full md:w-1/2 flex flex-col">
         <input
