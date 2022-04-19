@@ -2,15 +2,6 @@ import React, { useEffect } from "react";
 import DaysForecast from "./DaysForecast";
 import WeatherInfo from "./WeatherInfo";
 import moment from "moment";
-import {
-  BsFillSunFill,
-  BsFillCloudLightningRainFill,
-  BsFillCloudSunFill,
-  BsFillCloudRainHeavyFill,
-  BsFillCloudHaze2Fill,
-  BsFillCloudFog2Fill,
-  BsFillCloudFill,
-} from "react-icons/bs";
 
 interface PropType {
   temperature: any;

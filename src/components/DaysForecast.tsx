@@ -11,20 +11,19 @@ const DaysForecast: React.FC<IPropType> = ({ dates, icon }) => {
     if (!dates.length) return;
     console.log(!!dates);
   }, []);
-  console.log(dates);
-
-  console.log(icon);
-
   return (
     <div className="flex flex-row mt-10">
       {!dates.length ? (
-        <p>no data</p>
+        <p>7 DAY FORECAST</p>
       ) : (
         dates.map((item, indx) => {
           const infoicon = icon[indx];
           return (
             <>
-              <div className="flex flex-col items-center p-5 group hover:bg-white hover:rounded hover:bg-opacity-25">
+              <div
+                className="flex flex-col items-center p-5 group hover:bg-white hover:rounded hover:bg-opacity-25"
+                key={indx}
+              >
                 <h3 className="font-extralight font-Poppins text-xl group-hover:font-bold">
                   {item}
                 </h3>

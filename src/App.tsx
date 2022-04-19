@@ -7,8 +7,8 @@ const axios = require("axios");
 function App() {
   const searchInput = useRef(null);
   const [city, setCity] = useState("");
-  const [lng, setLng] = useState(0);
-  const [lat, setLat] = useState(0);
+  const [lng, setLng] = useState();
+  const [lat, setLat] = useState();
   const [daysforecast, setDaysForecast] = useState<any[]>([]);
   const [cityName, setCityName] = useState("");
   const [weatherData, setWeatherData] = useState<any[]>([]);
@@ -37,6 +37,50 @@ function App() {
     return loadAsyncScript(src);
   };
 
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(showPosition, showError);
+    } else {
+      console.log("Geolocation is not available");
+    }
+  };
+
+  const showPosition = (position: any) => {
+    const userLat = position.coords.latitude;
+    const userLng = position.coords.longitude;
+    const weatherApiLink = `https://api.openweathermap.org/data/2.5/onecall?lat=${userLat}&lon=${userLng}&exclude=hourly,minutely&units=metric&appid=${process.env.REACT_APP_OPENWEATHER_API_KEY}`;
+    const fetchWeather = async () => {
+      await axios.get(weatherApiLink).then((res: any) => {
+        setWeatherData(res.data.current);
+        setDaysForecast(res.data.daily);
+      });
+    };
+    const geoCodeLink = `https://maps.googleapis.com/maps/api/geocode/json?key=${process.env.REACT_APP_GMAP_API_KEY}&latlng=${userLat},${userLng}`;
+    const fetchGeocode = async () => {
+      await axios.get(geoCodeLink).then((res: any) => {
+        setCityName(res.data.results[0].address_components[1].long_name);
+      });
+    };
+    fetchWeather();
+    fetchGeocode();
+  };
+
+  const showError = (error: any) => {
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        console.log("Permission denied");
+        break;
+      case error.POSITION_UNAVAILABLE:
+        console.log("POSITION UNAVAILABLE");
+        break;
+      case error.TIMEOUT:
+        console.log("the request timed out");
+        break;
+      case error.UNKNOWN_ERROR:
+        console.log("an unknown error occurred");
+    }
+  };
+
   const initAutocomplete = (
     updateCity: any,
     searchInput: any,
@@ -60,6 +104,7 @@ function App() {
   }
 
   useEffect(() => {
+    getUserLocation();
     initMapScript().then(() =>
       initAutocomplete(setCity, searchInput, setCityName)
     );
