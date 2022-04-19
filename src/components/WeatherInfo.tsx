@@ -5,7 +5,7 @@ interface PropType {
 
 const WeatherInfo: React.FC<PropType> = ({ infos }) => {
   return (
-    <div className="flex flex-row items-center">
+    <div className="flex flex-row items-center justify-center md:justify-start">
       {infos.map((inf, idx) => (
         <div className="flex flex-col p-5" key={idx}>
           <h4 className="font-Poppins font-light text-lg text-center">

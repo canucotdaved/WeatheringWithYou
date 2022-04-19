@@ -12,7 +12,7 @@ const DaysForecast: React.FC<IPropType> = ({ dates, icon }) => {
     console.log(!!dates);
   }, []);
   return (
-    <div className="flex flex-row mt-10">
+    <div className="flex flex-row mt-10 flex-wrap md:flex-nowrap items-center md:items-start ">
       {!dates.length ? (
         <p>7 DAY FORECAST</p>
       ) : (

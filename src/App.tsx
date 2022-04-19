@@ -140,7 +140,7 @@ function App() {
   }, [lat, lng]);
 
   return (
-    <div className="bg-main bg-cover bg-no-repeat bg-center h-[100vh] flex">
+    <div className="bg-main bg-cover bg-no-repeat bg-center h-auto md:h-[100vh] flex flex-col-reverse md:flex-row justify-end md:justify-start">
       <div className="p-10 w-full md:w-1/2">
         <PlaceInfo
           temperature={weatherData}
@@ -152,7 +152,7 @@ function App() {
       <div className="p-10 w-full md:w-1/2 flex flex-col">
         <input
           type="text"
-          className="border-b bg-transparent placeholder:font-Poppins text-xl focus:ring-0 font-Poppins font-light pl-5"
+          className="border-b bg-transparent placeholder:font-Poppins text-xl focus:ring-0 font-Poppins font-light pl-5 w-1/2 mx-auto md:w-full "
           placeholder="Enter City"
           ref={searchInput}
         />

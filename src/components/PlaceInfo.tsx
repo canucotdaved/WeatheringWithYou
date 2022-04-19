@@ -49,7 +49,7 @@ const PlaceInfo: React.FC<PropType> = ({
 
   return (
     <div>
-      <div className="flex flex-row items-center">
+      <div className="flex flex-row items-center justify-center md:justify-start">
         {temperature?.temp ? (
           <h2 className="font-Poppins font-bold text-8xl pr-5">
             {Math.round(temperature?.temp)}&deg;
